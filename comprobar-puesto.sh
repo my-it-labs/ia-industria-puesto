@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Comprueba el puesto de los laboratorios. Se lanza desde infra/.
+# Comprueba el puesto de los laboratorios. Sirve en Ubuntu del equipo, en WSL2 o en una máquina virtual.
 # La aceptación es la línea PUESTO_OK. Cualquier fallo sale con código 1.
 set -u
 set -o pipefail
@@ -34,11 +34,13 @@ comprobar_equipo() {
   local mem_kb libres_gb mayor ver
 
   if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
-    fallo "hace falta Linux x86_64 en el equipo ($(uname -s) $(uname -m))"
+    fallo "hace falta Ubuntu x86_64, en el equipo, en WSL2 o en una máquina virtual ($(uname -s) $(uname -m))"
   elif grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
-    fallo "esto es WSL, no Linux en el equipo"
+    ok "Ubuntu en WSL2"
+  elif systemd-detect-virt --quiet 2>/dev/null; then
+    ok "Ubuntu en máquina virtual ($(systemd-detect-virt))"
   else
-    ok "Linux x86_64 en el equipo"
+    ok "Ubuntu en el equipo"
   fi
 
   if [[ "$(nproc)" -ge 4 ]]; then

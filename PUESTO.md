@@ -1,8 +1,8 @@
 # Puesto de los laboratorios
 
-El puesto es **Linux en el propio equipo**: Ubuntu 24.04 LTS, 64 bits. No es Windows, ni WSL2, ni una máquina virtual por encima de otro sistema.
+El puesto es Ubuntu 24.04 LTS, 64 bits. Vale en el propio equipo, en WSL2 o en una máquina virtual. La prueba mide esa Ubuntu.
 
-En clase, Docker reserva 2 GB para un modelo generativo y otros 2 GB para un paso de laboratorio, además del propio sistema. Esos límites salen de los 16 GB del equipo. En WSL2 hay que partir esa memoria con Windows, y Docker Desktop añade una máquina virtual y una licencia. La prueba de abajo rechaza ese puesto.
+En clase, Docker reserva 2 GB para un modelo generativo y otros 2 GB para un paso de laboratorio, además del propio sistema. Dentro de la Ubuntu tienen que verse 16 GB. En WSL2 o en una VM eso se asigna a propósito: si el PC solo tiene 16 GB, Windows o el hipervisor se quedan con una parte y la prueba no llega.
 
 Este repositorio no incluye los laboratorios. Comprueba el equipo y, con los mismos techos de memoria, un modelo pequeño y un segundo contenedor.
 
@@ -10,12 +10,7 @@ El equipo se prepara antes del primer día. Ese día no se instala nada.
 
 ## Equipo
 
-| | |
-|--|--|
-| Sistema | Ubuntu 24.04 LTS, x86_64, instalado en el equipo |
-| CPU | 4 núcleos. El modelo arranca con 4 hilos |
-| RAM | 16 GB |
-| Disco | 40 GB, con 20 GB libres después de instalar el sistema |
+Los mínimos y cómo repartirlos en cada sitio están en [README.md](README.md). Resumen: 4 núcleos, 16 GB de RAM y 20 GB libres dentro de la Ubuntu. En WSL2 el PC necesita 32 GB y un `.wslconfig` con `memory=16GB` y `processors=4`. En una máquina virtual se asignan 4 vCPU, 16 GB y 40 GB de disco, sobre un PC de unos 8 núcleos y 32 GB.
 
 ## Software
 
@@ -60,8 +55,8 @@ Si algo no cumple, el script sale con código 1 y escribe `FALLO` y el motivo. N
 
 La prueba hace tres cosas, en este orden:
 
-1. Equipo. Sistema Linux de verdad (no WSL), 4 núcleos, 16 GB, 20 GB libres, Docker 24 accesible sin `sudo`, Compose v2, los seis puertos libres y salida HTTPS a los tres sitios.
-2. Memoria que ve Docker. Tiene que ser la del equipo, no la de una máquina virtual recortada. Por debajo de 12 GB la prueba para.
+1. Equipo. Ubuntu x86_64 en el equipo, en WSL2 o en una máquina virtual; 4 núcleos, 16 GB, 20 GB libres, Docker 24 accesible sin `sudo`, Compose v2, los seis puertos libres y salida HTTPS a los tres sitios.
+2. Memoria que ve Docker. Al menos 12 GB. Si WSL o la máquina virtual se crearon con menos, la prueba para.
 3. Desempeño. Arranca un contenedor con techo de 2 GB, carga el modelo y pide una respuesta corta. Con ese contenedor en marcha, arranca otro de 2 GB. Falla si uno muere por falta de memoria, si el modelo no responde en 45 segundos o si el segundo contenedor no termina en 120 segundos.
 
 Al terminar, para los contenedores. Para repetir solo el equipo, sin arrancar nada:
