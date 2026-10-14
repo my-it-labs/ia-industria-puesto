@@ -10,7 +10,7 @@ cd ia-industria-puesto
 ./comprobar-puesto.sh
 ```
 
-La primera vez construye la imagen y baja un modelo de unos 470 MB. Tarda varios minutos. El equipo está listo solo si la última línea es:
+La primera vez baja Mosquitto, los paquetes Python de los laboratorios, la rueda del modelo y el fichero de unos 470 MB. Publica los puertos de la clase, lee un fichero a través de Docker y carga el modelo junto con un segundo contenedor. No ejecuta los ejercicios. Tarda varios minutos. El equipo está listo solo si la última línea es:
 
 ```text
 PUESTO_OK

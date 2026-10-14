@@ -22,6 +22,8 @@ LLM_MAX_S=45
 LAB_MAX_S=120
 MODELO="modelos/qwen2.5-0.5b-instruct-q4_k_m.gguf"
 URL_MODELO="https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+URL_RUEDA="https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.19/llama_cpp_python-0.3.19-cp312-cp312-linux_x86_64.whl"
+IMAGEN="puesto-modelo"
 PUERTOS=(1883 4840 1502 8501 8000 8088)
 
 ok() { printf 'OK  %s\n' "$1"; }
@@ -42,6 +44,15 @@ comprobar_equipo() {
   else
     ok "Ubuntu en el equipo"
   fi
+
+  case "$(pwd -P)" in
+    /mnt/*)
+      fallo "el repositorio está en /mnt (disco de Windows). Clónalo en el home de Ubuntu"
+      ;;
+    *)
+      ok "repositorio en el disco de Ubuntu"
+      ;;
+  esac
 
   if [[ "$(nproc)" -ge 4 ]]; then
     ok "cpu $(nproc) núcleos"
@@ -118,16 +129,19 @@ comprobar_equipo() {
   done
 
   local nombre url
-  for nombre in "Docker Hub" "GitHub" "Hugging Face"; do
+  for nombre in "Docker Hub" "GitHub" "Hugging Face" "PyPI" "paquetes Python" "Debian"; do
     case "$nombre" in
       "Docker Hub") url="https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/hello-world:pull" ;;
-      "GitHub") url="https://github.com" ;;
-      "Hugging Face") url="https://huggingface.co" ;;
+      "GitHub") url="$URL_RUEDA" ;;
+      "Hugging Face") url="$URL_MODELO" ;;
+      "PyPI") url="https://pypi.org/simple/numpy/" ;;
+      "paquetes Python") url="https://files.pythonhosted.org/packages/3f/27/4570e78fc0bf5ea0ca45eb1de3818a23787af9b390c0b0a0033a1b8236f9/diskcache-5.6.3-py3-none-any.whl" ;;
+      "Debian") url="http://deb.debian.org/debian/dists/bookworm/Release" ;;
     esac
-    if curl -fsS -o /dev/null --max-time 20 "$url"; then
+    if curl -fsSL -o /dev/null --max-time 30 -r 0-0 "$url"; then
       ok "salida $nombre"
     else
-      fallo "sin salida HTTPS a $nombre"
+      fallo "sin salida a $nombre ($url)"
     fi
   done
 }
@@ -164,17 +178,97 @@ alguno_oom() {
   return 1
 }
 
-comprobar_desempeno() {
-  local t_llm t_lab salida oom
+comprobar_descargas() {
+  echo "+ docker pull eclipse-mosquitto:2"
+  if ! docker pull eclipse-mosquitto:2; then
+    fallo "no se pudo bajar eclipse-mosquitto:2 desde Docker Hub"
+    return 1
+  fi
+  ok "imagen mosquitto"
 
   echo "+ docker compose build"
   if ! docker compose build; then
-    fallo "docker compose build"
+    fallo "no se pudo construir la imagen (pip, la rueda de GitHub o apt)"
+    return 1
+  fi
+  ok "imagen construida, paquetes instalados"
+
+  local salida
+  salida="$(docker run --rm "$IMAGEN" python /opt/importar.py)" || {
+    fallo "un paquete no importa dentro del contenedor"
+    printf '%s\n' "$salida"
+    return 1
+  }
+  if ! grep -q 'OK imports' <<<"$salida"; then
+    fallo "un paquete no importa dentro del contenedor"
+    printf '%s\n' "$salida"
+    return 1
+  fi
+  ok "paquetes importados"
+}
+
+comprobar_puertos_publicados() {
+  local puerto cid bien i
+  for puerto in "${PUERTOS[@]}"; do
+    cid="$(docker run -d --rm -p "${puerto}:8080" "$IMAGEN" python /opt/escucha.py)" || {
+      fallo "no se pudo publicar el puerto $puerto"
+      continue
+    }
+    bien=0
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+      if curl -fsS --max-time 2 "http://127.0.0.1:${puerto}/" 2>/dev/null | grep -q ok; then
+        bien=1
+        break
+      fi
+      sleep 0.5
+    done
+    docker rm -f "$cid" >/dev/null 2>&1 || true
+    if [[ "$bien" -eq 1 ]]; then
+      ok "localhost:$puerto llega al contenedor"
+    else
+      fallo "localhost:$puerto no llega al contenedor"
+    fi
+  done
+}
+
+comprobar_volumen() {
+  local salida
+  mkdir -p data
+  echo ok > data/puesto-escritura
+  salida="$(docker run --rm -v "$PWD/data:/data:ro" "$IMAGEN" python -c 'print(open("/data/puesto-escritura").read().strip())')" || {
+    fallo "Docker no pudo leer un fichero del disco"
+    printf '%s\n' "$salida"
+    return 1
+  }
+  rm -f data/puesto-escritura
+  if [[ "$salida" == "ok" ]]; then
+    ok "volumen leído desde el disco"
+  else
+    fallo "Docker leyó mal el fichero del disco"
+    printf '%s\n' "$salida"
+    return 1
+  fi
+}
+
+comprobar_desempeno() {
+  local t_llm t_lab salida oom libres_gb
+
+  comprobar_descargas || return
+  comprobar_puertos_publicados
+  if [[ "$FALLOS" -gt 0 ]]; then
     return
   fi
-  ok "imagen construida"
+  comprobar_volumen || return
 
   asegurar_modelo || return
+
+  libres_gb="$(df -BG --output=avail . | awk 'NR==2 {gsub(/G/,"",$1); print $1}')"
+  if [[ "$libres_gb" -ge 5 ]]; then
+    ok "tras las descargas quedan ${libres_gb} GB libres"
+  else
+    fallo "tras las descargas quedan ${libres_gb} GB; hacen falta 5 GB para la clase"
+    return
+  fi
 
   echo "+ arrancando el modelo"
   if ! docker compose up -d modelo; then
