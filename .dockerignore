@@ -1,0 +1,4 @@
+data
+modelos
+**/__pycache__
+**/*.pyc

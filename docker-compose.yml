@@ -1,0 +1,97 @@
+name: ia-linea
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    command: ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - "1883:1883"
+    mem_limit: 64m
+
+  sensor:
+    build: .
+    command: ["linea.sensor"]
+    depends_on: [mosquitto]
+    environment: &entorno
+      MQTT_HOST: mosquitto
+      DATA_DIR: /data
+      OPCUA_ENDPOINT: opc.tcp://opcua:4840/linea/server
+      MODBUS_HOST: modbus
+      MODBUS_PORT: "1502"
+      PANEL_URL: http://panel:8501
+      API_URL: http://api:8000
+      LLM_URL: http://llm:8088
+      MODELO_PATH: /modelos/qwen2.5-0.5b-instruct-q4_k_m.gguf
+    volumes: &datos
+      - ./data:/data
+      - ./linea:/opt/linea
+    mem_limit: 192m
+
+  archivador:
+    build: .
+    command: ["linea.archivador"]
+    depends_on: [mosquitto]
+    environment: *entorno
+    volumes: *datos
+    mem_limit: 192m
+
+  opcua:
+    build: .
+    command: ["linea.opcua_server"]
+    ports:
+      - "4840:4840"
+    environment: *entorno
+    volumes: *datos
+    mem_limit: 256m
+
+  modbus:
+    build: .
+    command: ["linea.modbus_server"]
+    ports:
+      - "1502:1502"
+    environment: *entorno
+    volumes: *datos
+    mem_limit: 192m
+
+  panel:
+    build: .
+    command: ["streamlit", "run", "/opt/linea/panel.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true", "--browser.gatherUsageStats=false"]
+    ports:
+      - "8501:8501"
+    environment: *entorno
+    volumes: *datos
+    mem_limit: 512m
+
+  llm:
+    build: .
+    command: ["linea.llm_servicio"]
+    ports:
+      - "8088:8088"
+    environment: *entorno
+    volumes:
+      - ./data:/data
+      - ./linea:/opt/linea
+      - ./modelos:/modelos:ro
+    mem_limit: 2g
+
+  api:
+    build: .
+    command: ["uvicorn", "linea.inferencia_api:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment: *entorno
+    volumes: *datos
+    mem_limit: 768m
+
+  lab:
+    build: .
+    entrypoint: ["python", "-m", "linea.cli"]
+    environment: *entorno
+    volumes:
+      - ./data:/data
+      - ./linea:/opt/linea
+      - ./modelos:/modelos:ro
+    mem_limit: 2g
+    profiles: ["lab"]

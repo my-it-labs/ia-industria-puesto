@@ -1,0 +1,4 @@
+modelos/*.gguf
+data/
+**/__pycache__/
+**/*.pyc
