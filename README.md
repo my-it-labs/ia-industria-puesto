@@ -1,6 +1,6 @@
-# Prueba del puesto
+# Preparación del puesto
 
-Comprueba que un equipo puede correr los laboratorios de **Inteligencia Artificial Aplicada a Entornos Industriales**.
+Este repositorio no contiene el curso. Sirve para dejar el equipo listo y comprobar que aguanta la carga de los laboratorios.
 
 Lo que hay que instalar está en [PUESTO.md](PUESTO.md). El equipo es Ubuntu 24.04 en la propia máquina, con el usuario de clase en el grupo `docker`. En clase no se usa `sudo`.
 
@@ -10,7 +10,7 @@ cd ia-industria-puesto
 ./comprobar-puesto.sh
 ```
 
-La primera vez construye la imagen, baja el modelo y arranca la estación. Tarda varios minutos. El equipo está listo solo si la última línea es:
+La primera vez construye la imagen y baja un modelo de unos 470 MB. Tarda varios minutos. El equipo está listo solo si la última línea es:
 
 ```text
 PUESTO_OK

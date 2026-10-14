@@ -174,8 +174,8 @@ comprobar_desempeno() {
 
   asegurar_modelo || return
 
-  echo "+ arrancando estación y modelo"
-  if ! docker compose up -d mosquitto sensor archivador opcua modbus panel llm; then
+  echo "+ arrancando el modelo"
+  if ! docker compose up -d modelo; then
     fallo "docker compose up"
     return
   fi
@@ -186,14 +186,19 @@ comprobar_desempeno() {
       ok "modelo en marcha"
       break
     fi
+    if ! docker compose ps --status running --quiet modelo | grep -q .; then
+      fallo "el contenedor del modelo se detuvo"
+      docker compose logs --tail 40 modelo || true
+      return
+    fi
     if oom="$(alguno_oom)"; then
       fallo "contenedor muerto por memoria: $oom"
-      docker compose logs --tail 40 llm || true
+      docker compose logs --tail 40 modelo || true
       return
     fi
     if [[ "$i" -eq 90 ]]; then
       fallo "el modelo no respondió en /salud"
-      docker compose logs --tail 40 llm || true
+      docker compose logs --tail 40 modelo || true
       return
     fi
     sleep 2
@@ -205,7 +210,7 @@ comprobar_desempeno() {
     http://127.0.0.1:8088/v1/chat/completions || true)"
   if [[ -z "$t_llm" ]] || ! grep -q '"content"' /tmp/puesto-chat.json 2>/dev/null; then
     fallo "el modelo no contestó en ${LLM_MAX_S}s"
-    docker compose logs --tail 40 llm || true
+    docker compose logs --tail 40 modelo || true
     return
   fi
   ok "respuesta del modelo en ${t_llm}s"
@@ -217,18 +222,18 @@ comprobar_desempeno() {
 
   local inicio
   inicio="$SECONDS"
-  salida="$(docker compose --profile lab run --rm --no-deps lab m01-01)" || {
-    fallo "el paso m01-01 no terminó"
+  salida="$(docker compose --profile paso run --rm --no-deps paso)" || {
+    fallo "el segundo contenedor no terminó"
     printf '%s\n' "$salida"
     return
   }
   t_lab="$((SECONDS - inicio))"
-  if [[ "$t_lab" -gt "$LAB_MAX_S" ]] || ! grep -q 'OK m01-01' <<<"$salida"; then
-    fallo "m01-01 no dio OK en ${LAB_MAX_S}s"
+  if [[ "$t_lab" -gt "$LAB_MAX_S" ]] || ! grep -q 'OK paso' <<<"$salida"; then
+    fallo "el segundo contenedor no dio OK en ${LAB_MAX_S}s"
     printf '%s\n' "$salida"
     return
   fi
-  ok "m01-01 en ${t_lab}s"
+  ok "segundo contenedor en ${t_lab}s"
 
   if oom="$(alguno_oom)"; then
     fallo "contenedor muerto por memoria: $oom"
