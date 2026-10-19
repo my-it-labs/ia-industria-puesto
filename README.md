@@ -28,11 +28,11 @@ Dentro de la Ubuntu, en los tres casos:
 |--|--|
 | Sistema | Ubuntu 24.04 LTS, 64 bits |
 | CPU | 4 núcleos. El modelo arranca con 4 hilos |
-| RAM | 16 GB. La prueba pide al menos 14 GB visibles para el sistema y 12 GB vistos por Docker |
+| RAM | 16 GB en el equipo. La prueba pide al menos 11 GB visibles en la Ubuntu y 11 GB vistos por Docker |
 | Disco libre | 20 GB, después de instalar el sistema |
 | Docker | Engine 24 o superior y Compose v2, usables sin `sudo` |
 
-En clase Docker reserva 2 GB para un modelo y otros 2 GB para un paso, además del sistema. Con menos de 16 GB dentro de la Ubuntu ese margen no cabe.
+En clase Docker reserva 2 GB para un modelo y otros 2 GB para un paso, además del sistema. Con todo arrancado, los contenedores no pasan de unos 6 GB; 12 GB dentro de la Ubuntu dejan margen.
 
 ### Ubuntu en el equipo
 
@@ -42,13 +42,19 @@ El PC es la Ubuntu. Con 4 núcleos, 16 GB de RAM y un disco de 40 GB se cumple l
 
 Ubuntu 24.04 instalada en WSL2. Docker va dentro de esa Ubuntu. No hace falta Docker Desktop.
 
-Windows se queda con parte de la RAM, así que el PC necesita **32 GB**. Si no, dentro de WSL no llegan a verse 16 GB. En `%UserProfile%\.wslconfig`:
+Vale un PC de **16 GB**. Por defecto WSL solo ve la mitad, así que hay que darle 12 GB. Windows sigue funcionando porque WSL solo ocupa lo que usa y lo devuelve. En `%UserProfile%\.wslconfig`:
 
 ```
 [wsl2]
-memory=16GB
+memory=12GB
+swap=8GB
 processors=4
+
+[experimental]
+autoMemoryReclaim=gradual
 ```
+
+Con 32 GB en el PC se puede poner `memory=16GB`.
 
 Después, `wsl --shutdown` y volver a abrir Ubuntu. En el disco de esa Ubuntu tienen que quedar 20 GB libres.
 

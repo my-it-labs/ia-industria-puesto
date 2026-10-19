@@ -15,8 +15,8 @@ elif [[ -n "${1:-}" ]]; then
 fi
 
 FALLOS=0
-RAM_MIN_KB=$((14 * 1024 * 1024))
-DOCKER_RAM_MIN=$((12 * 1024 * 1024 * 1024))
+RAM_MIN_KB=$((11 * 1024 * 1024))
+DOCKER_RAM_MIN=$((11 * 1024 * 1024 * 1024))
 DISCO_MIN_GB=20
 LLM_MAX_S=45
 LAB_MAX_S=120
@@ -64,7 +64,7 @@ comprobar_equipo() {
   if [[ "$mem_kb" -ge "$RAM_MIN_KB" ]]; then
     ok "ram $(awk -v kb="$mem_kb" 'BEGIN {printf "%.1f GB", kb/1024/1024}')"
   else
-    fallo "ram $(awk -v kb="$mem_kb" 'BEGIN {printf "%.1f GB", kb/1024/1024}'); hacen falta 16 GB instalados"
+    fallo "ram $(awk -v kb="$mem_kb" 'BEGIN {printf "%.1f GB", kb/1024/1024}'); hacen falta 16 GB instalados (en WSL, memory=12GB en .wslconfig)"
   fi
 
   libres_gb="$(df -BG --output=avail . | awk 'NR==2 {gsub(/G/,"",$1); print $1}')"
@@ -115,7 +115,7 @@ comprobar_equipo() {
     if [[ "$docker_ram" -ge "$DOCKER_RAM_MIN" ]]; then
       ok "docker ve $((docker_ram / 1024 / 1024 / 1024)) GB"
     else
-      fallo "docker solo ve $((docker_ram / 1024 / 1024 / 1024)) GB; la máquina virtual está recortada"
+      fallo "docker solo ve $((docker_ram / 1024 / 1024 / 1024)) GB; la máquina virtual está recortada (en WSL, memory=12GB en .wslconfig)"
     fi
   fi
 
