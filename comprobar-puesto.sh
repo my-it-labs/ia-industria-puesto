@@ -24,7 +24,7 @@ MODELO="modelos/qwen2.5-0.5b-instruct-q4_k_m.gguf"
 URL_MODELO="https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
 URL_RUEDA="https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.19/llama_cpp_python-0.3.19-cp312-cp312-linux_x86_64.whl"
 IMAGEN="puesto-modelo"
-PUERTOS=(1883 4840 1502 8501 8000 8088 9090)
+PUERTOS=(1883 4840 1502 8501 8000 8088 9090 9101 9102)
 
 ok() { printf 'OK  %s\n' "$1"; }
 fallo() {

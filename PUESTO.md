@@ -37,7 +37,7 @@ Salida a:
 
 La primera preparación baja todo eso. En clase no hay más descargas. No hace falta abrir puertos hacia internet: el navegador usa `localhost`.
 
-En el equipo tienen que estar libres los puertos 1883, 4840, 1502, 8501, 8000, 8088 y 9090.
+En el equipo tienen que estar libres los puertos 1883, 4840, 1502, 8501, 8000, 8088, 9090, 9101 y 9102.
 
 ## Cómo se comprueba
 
@@ -57,10 +57,10 @@ Si algo no cumple, el script sale con código 1 y escribe `FALLO` y el motivo. N
 
 La prueba hace tres cosas, en este orden:
 
-1. Equipo. Ubuntu x86_64 en el equipo, en WSL2 o en una máquina virtual; el repositorio en el disco de esa Ubuntu, no en `/mnt`; 4 núcleos, 11 GB visibles, 20 GB libres, Docker 24 sin `sudo`, Compose v2, los siete puertos libres y salida a Docker Hub, GitHub, Hugging Face, PyPI y Debian.
+1. Equipo. Ubuntu x86_64 en el equipo, en WSL2 o en una máquina virtual; el repositorio en el disco de esa Ubuntu, no en `/mnt`; 4 núcleos, 11 GB visibles, 20 GB libres, Docker 24 sin `sudo`, Compose v2, los nueve puertos libres y salida a Docker Hub, GitHub, Hugging Face, PyPI y Debian.
 2. Memoria que ve Docker. Al menos 11 GB. Si WSL o la máquina virtual se crearon con menos, la prueba para.
 3. Descargas. Baja Mosquitto y Prometheus, construye la imagen con los paquetes de los laboratorios e importa cada uno dentro del contenedor.
-4. Red local. Publica los siete puertos y comprueba que `localhost` llega al contenedor. Lee un fichero del disco a través de Docker.
+4. Red local. Publica los nueve puertos y comprueba que `localhost` llega al contenedor. Lee un fichero del disco a través de Docker.
 5. Desempeño. Arranca un contenedor con techo de 2 GB, carga el modelo y pide una respuesta corta. Con ese contenedor en marcha, arranca otro de 2 GB. Falla si uno muere por falta de memoria, si el modelo no responde en 45 segundos o si el segundo contenedor no termina en 120 segundos. Al final tienen que quedar al menos 5 GB libres.
 
 Al terminar, para los contenedores. Para repetir solo el equipo, sin arrancar nada:
